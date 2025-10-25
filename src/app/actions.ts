@@ -1,10 +1,7 @@
 'use server';
 
-import { generateInitialTaskList } from '@/ai/flows/generate-initial-task-list';
+import { generateConversationalResponse } from '@/ai/flows/conversational-response';
 import { summarizeWebpageContent } from '@/ai/flows/summarize-webpage-content';
-import { z } from 'zod';
-
-const urlSchema = z.string().url({ message: "Please enter a valid URL." });
 
 function isValidUrl(text: string) {
   try {
@@ -22,12 +19,8 @@ export async function getAiResponse(prompt: string) {
       const result = await summarizeWebpageContent({ url: prompt });
       return { success: true, data: result.summary };
     } else {
-      const result = await generateInitialTaskList({ prompt });
-      if (result.tasks.length === 0) {
-        return { success: true, data: "I can help with a variety of tasks! For example, try asking me to 'plan a weekend trip to the mountains' or 'create a grocery list for a week'." };
-      }
-      const formattedTasks = result.tasks.map(task => `- ${task}`).join('\n');
-      return { success: true, data: formattedTasks };
+      const result = await generateConversationalResponse({ prompt });
+      return { success: true, data: result.response };
     }
   } catch (error) {
     console.error(error);
