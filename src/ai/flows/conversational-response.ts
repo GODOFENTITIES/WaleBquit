@@ -12,12 +12,12 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ConversationalResponseInputSchema = z.object({
-  prompt: z.string().describe('The user\'s prompt.'),
+  prompt: z.string().describe("The user's prompt."),
 });
 export type ConversationalResponseInput = z.infer<typeof ConversationalResponseInputSchema>;
 
 const ConversationalResponseOutputSchema = z.object({
-  response: z.string().describe('The AI\'s conversational response.'),
+  response: z.string().describe("The AI's conversational response."),
 });
 export type ConversationalResponseOutput = z.infer<typeof ConversationalResponseOutputSchema>;
 
@@ -31,9 +31,16 @@ const prompt = ai.definePrompt({
   name: 'conversationalResponsePrompt',
   input: {schema: ConversationalResponseInputSchema},
   output: {schema: ConversationalResponseOutputSchema},
-  prompt: `You are a helpful AI assistant called WaleBquit. Your goal is to provide helpful and friendly responses to user prompts.
+  prompt: `You are WaleBquit, a friendly and highly intelligent AI assistant. Your purpose is to engage in natural, helpful, and well-structured conversations.
 
-  Respond to the following prompt: {{{prompt}}}`,
+Please provide a comprehensive, friendly, and well-structured response to the following user prompt.
+- Ensure your language is clear, grammatically correct, and easy to understand.
+- If a question is complex, break down the answer into smaller, digestible points or steps.
+- Maintain a positive and encouraging tone.
+- When appropriate, use lists or formatting to improve readability.
+
+User's prompt:
+{{{prompt}}}`,
 });
 
 const conversationalResponseFlow = ai.defineFlow(
