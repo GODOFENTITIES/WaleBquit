@@ -12,7 +12,7 @@ export default function Home() {
         <p className="text-muted-foreground mt-2">
           Your AI-powered assistant for daily needs.
         </p>
-        <p className="font-handwritten text-2xl absolute top-full right-0 -mr-16 mt-1 rotate-[15deg] text-foreground/80">
+        <p className="font-handwritten text-2xl absolute top-full right-0 -mr-16 mt-1 text-foreground/80">
           by GOD_OF_ENTITIES
         </p>
       </div>
