@@ -16,7 +16,7 @@ export function ChatLayout() {
     {
       id: 'init',
       role: 'assistant',
-      content: "Hello! I'm Pocket AI. I can help you generate ideas, summarize web pages, and much more. What's on your mind?",
+      content: "Hello! I'm WaleBquit. I can help you generate ideas, summarize web pages, and much more. What's on your mind?",
       createdAt: new Date(),
     }
   ]);

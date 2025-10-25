@@ -31,7 +31,7 @@ const prompt = ai.definePrompt({
   name: 'conversationalResponsePrompt',
   input: {schema: ConversationalResponseInputSchema},
   output: {schema: ConversationalResponseOutputSchema},
-  prompt: `You are a helpful AI assistant called Pocket AI. Your goal is to provide helpful and friendly responses to user prompts.
+  prompt: `You are a helpful AI assistant called WaleBquit. Your goal is to provide helpful and friendly responses to user prompts.
 
   Respond to the following prompt: {{{prompt}}}`,
 });

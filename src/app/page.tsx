@@ -7,7 +7,7 @@ export default function Home() {
       <div className="flex flex-col items-center text-center mb-8">
         <Logo />
         <h1 className="text-4xl font-bold tracking-tight mt-4 font-headline">
-          Pocket AI
+          WaleBquit
         </h1>
         <p className="text-muted-foreground mt-2">
           Your AI-powered assistant for daily needs.

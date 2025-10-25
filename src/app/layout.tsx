@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: 'Pocket AI',
+  title: 'WaleBquit',
   description: 'Your everyday AI assistant',
 };
 
