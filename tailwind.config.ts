@@ -12,6 +12,7 @@ export default {
       fontFamily: {
         body: ['PT Sans', 'sans-serif'],
         headline: ['PT Sans', 'sans-serif'],
+        handwritten: ['Kalam', 'cursive'],
         code: ['monospace'],
       },
       colors: {
