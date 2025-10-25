@@ -24,7 +24,7 @@ export async function getAiResponse(prompt: string) {
     } else {
       const result = await generateInitialTaskList({ prompt });
       if (result.tasks.length === 0) {
-        return { success: true, data: "I'm not sure how to help with that. Try asking me to do something like 'plan a trip' or 'create a grocery list'." };
+        return { success: true, data: "I can help with a variety of tasks! For example, try asking me to 'plan a weekend trip to the mountains' or 'create a grocery list for a week'." };
       }
       const formattedTasks = result.tasks.map(task => `- ${task}`).join('\n');
       return { success: true, data: formattedTasks };
