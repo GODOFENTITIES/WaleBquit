@@ -23,19 +23,24 @@ export function ChatLayout() {
   const [input, setInput] = useState('');
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [isResponding, setIsResponding] = useState(false);
 
-  useEffect(() => {
+  const scrollToBottom = () => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTo({
         top: scrollAreaRef.current.scrollHeight,
         behavior: 'smooth',
       });
     }
+  }
+
+  useEffect(() => {
+    scrollToBottom();
   }, [messages]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isResponding) return;
     
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -56,9 +61,10 @@ export function ChatLayout() {
     
     const currentInput = input;
     setInput('');
+    setIsResponding(true);
 
     const result = await getAiResponse(currentInput);
-
+    
     if (result.success) {
       setMessages(prev =>
         prev.map(msg =>
@@ -73,6 +79,7 @@ export function ChatLayout() {
         description: result.error,
       });
     }
+    setIsResponding(false);
   };
 
   return (
@@ -91,8 +98,9 @@ export function ChatLayout() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask me anything..."
             className="flex-1"
+            disabled={isResponding}
           />
-          <Button type="submit" size="icon" variant="gooeyLeft">
+          <Button type="submit" size="icon" variant="gooeyLeft" disabled={isResponding}>
             <SendHorizonal className="size-5" />
           </Button>
         </form>
