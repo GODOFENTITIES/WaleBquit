@@ -4,6 +4,7 @@ import { ChatAvatar } from './chat-avatar';
 import { ThinkingIndicator } from './thinking-indicator';
 import { useTypewriter } from '@/hooks/use-typewriter';
 import { useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 interface ChatMessageProps {
   message: Message;
@@ -34,7 +35,8 @@ export function ChatMessage({ message, isResponding, onContentChange }: ChatMess
       {isAssistant && <ChatAvatar role="assistant" />}
       <div
         className={cn(
-          'max-w-[80%] rounded-2xl p-3 px-4',
+          'max-w-[80%] rounded-2xl p-3 px-4 prose prose-sm prose-neutral dark:prose-invert',
+          'prose-p:leading-relaxed prose-p:m-0',
           message.role === 'user'
             ? 'bg-primary text-primary-foreground rounded-br-none'
             : 'bg-card border rounded-bl-none'
@@ -43,7 +45,13 @@ export function ChatMessage({ message, isResponding, onContentChange }: ChatMess
         {isThinking ? (
           <ThinkingIndicator />
         ) : (
-          <p className="leading-relaxed whitespace-pre-wrap">{displayText}</p>
+          <ReactMarkdown
+            components={{
+              p: ({ node, ...props }) => <p className="leading-relaxed" {...props} />,
+            }}
+          >
+            {displayText}
+          </ReactMarkdown>
         )}
       </div>
       {message.role === 'user' && <ChatAvatar role="user" />}
