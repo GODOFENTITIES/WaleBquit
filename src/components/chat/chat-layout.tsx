@@ -24,11 +24,12 @@ export function ChatLayout() {
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isResponding, setIsResponding] = useState(false);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({
-        top: scrollAreaRef.current.scrollHeight,
+    if (viewportRef.current) {
+      viewportRef.current.scrollTo({
+        top: viewportRef.current.scrollHeight,
         behavior: 'smooth',
       });
     }
@@ -57,13 +58,15 @@ export function ChatLayout() {
       createdAt: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage, aiThinkingMessage]);
+    const newMessages = [...messages, userMessage, aiThinkingMessage];
+    setMessages(newMessages);
     
     const currentInput = input;
     setInput('');
     setIsResponding(true);
 
-    const result = await getAiResponse(currentInput);
+    const history = messages.map(({ id, createdAt, ...rest }) => rest);
+    const result = await getAiResponse(currentInput, history);
     
     if (result.success) {
       setMessages(prev =>
@@ -84,8 +87,8 @@ export function ChatLayout() {
 
   return (
     <Card className="w-full max-w-3xl h-[75vh] shadow-2xl flex flex-col">
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        <div className="space-y-4">
+      <ScrollArea className="flex-1" viewportRef={viewportRef}>
+        <div className="p-4 space-y-4" ref={scrollAreaRef}>
           {messages.map((message) => (
             <ChatMessage
               key={message.id}

@@ -2,6 +2,7 @@
 
 import { generateConversationalResponse } from '@/ai/flows/conversational-response';
 import { summarizeWebpageContent } from '@/ai/flows/summarize-webpage-content';
+import { type Message } from '@/lib/types';
 
 function isValidUrl(text: string) {
   try {
@@ -13,13 +14,13 @@ function isValidUrl(text: string) {
   }
 }
 
-export async function getAiResponse(prompt: string) {
+export async function getAiResponse(prompt: string, history: Omit<Message, 'id' | 'createdAt'>[]) {
   try {
     if (isValidUrl(prompt)) {
       const result = await summarizeWebpageContent({ url: prompt });
       return { success: true, data: result.summary };
     } else {
-      const result = await generateConversationalResponse({ prompt });
+      const result = await generateConversationalResponse({ prompt, history });
       return { success: true, data: result.response };
     }
   } catch (error) {
