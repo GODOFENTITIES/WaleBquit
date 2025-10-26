@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview Generates a conversational response to a user prompt, considering conversation history.
+ * @fileOverview Generates a conversational response to a user prompt.
  *
  * - generateConversationalResponse - A function that generates a conversational response.
  * - ConversationalResponseInput - The input type for the generateConversationalResponse function.
@@ -11,14 +11,8 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const MessageSchema = z.object({
-  role: z.enum(['user', 'assistant']),
-  content: z.string(),
-});
-
 const ConversationalResponseInputSchema = z.object({
-  history: z.array(MessageSchema).describe('The conversation history.'),
-  prompt: z.string().describe("The user's latest prompt."),
+  prompt: z.string().describe("The user's prompt."),
 });
 export type ConversationalResponseInput = z.infer<typeof ConversationalResponseInputSchema>;
 
@@ -39,7 +33,7 @@ const conversationalResponseFlow = ai.defineFlow(
     inputSchema: ConversationalResponseInputSchema,
     outputSchema: ConversationalResponseOutputSchema,
   },
-  async ({history, prompt}) => {
+  async ({prompt}) => {
     const {output} = await ai.generate({
       prompt: `You are WaleBquit, a friendly and highly intelligent AI assistant. Your purpose is to engage in natural, helpful, and well-structured conversations.
 
@@ -52,7 +46,6 @@ Please provide a comprehensive, friendly, and well-structured response to the fo
 
 User's prompt:
 {{{prompt}}}`,
-      history: history.map(h => ({role: h.role, content: h.content})),
     });
     return output!;
   }
