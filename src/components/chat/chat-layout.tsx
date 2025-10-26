@@ -10,19 +10,20 @@ import { ChatMessage } from './chat-message';
 import { SendHorizonal } from 'lucide-react';
 import { getAiResponse } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { useChatHistory } from '@/hooks/use-chat-history';
+import { Logo } from '../logo';
 
 export function ChatLayout() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'init',
-      role: 'assistant',
-      content: "Hello! I'm WaleBquit. I can help you generate ideas, summarize web pages, and much more. What's on your mind?",
-      createdAt: new Date(),
-    }
-  ]);
+  const { 
+    activeSession, 
+    activeSessionId, 
+    addMessageToSession, 
+    updateMessageInSession,
+    removeMessageFromSession
+  } = useChatHistory();
+  
   const [input, setInput] = useState('');
   const { toast } = useToast();
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isResponding, setIsResponding] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
 
@@ -37,11 +38,11 @@ export function ChatLayout() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [activeSession?.messages]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!input.trim() || isResponding) return;
+    if (!input.trim() || isResponding || !activeSessionId) return;
     
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -58,24 +59,22 @@ export function ChatLayout() {
       createdAt: new Date(),
     };
 
-    const newMessages = [...messages, userMessage, aiThinkingMessage];
-    setMessages(newMessages);
+    addMessageToSession(activeSessionId, userMessage);
+    addMessageToSession(activeSessionId, aiThinkingMessage);
     
     const currentInput = input;
     setInput('');
     setIsResponding(true);
 
-    const history = messages.map(({ id, createdAt, ...rest }) => rest);
+    const history = activeSession?.messages.map(({ id, createdAt, ...rest }) => rest) || [];
     const result = await getAiResponse(currentInput, history);
     
-    if (result.success) {
-      setMessages(prev =>
-        prev.map(msg =>
-          msg.id === thinkingMessageId ? { ...msg, content: result.data } : msg
-        )
-      );
+    if (result.success && activeSessionId) {
+      updateMessageInSession(activeSessionId, thinkingMessageId, result.data);
     } else {
-      setMessages(prev => prev.filter(msg => msg.id !== thinkingMessageId));
+      if(activeSessionId) {
+        removeMessageFromSession(activeSessionId, thinkingMessageId);
+      }
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -84,35 +83,46 @@ export function ChatLayout() {
     }
     setIsResponding(false);
   };
+  
+  if (!activeSession) {
+    return (
+      <div className="w-full max-w-3xl h-[75vh] flex items-center justify-center">
+        <p>Select a chat or start a new one.</p>
+      </div>
+    );
+  }
+
 
   return (
-    <Card className="w-full max-w-3xl h-[75vh] shadow-2xl flex flex-col">
-      <ScrollArea className="flex-1" viewportRef={viewportRef}>
-        <div className="p-4 space-y-4" ref={scrollAreaRef}>
-          {messages.map((message) => (
-            <ChatMessage
-              key={message.id}
-              message={message}
-              isResponding={isResponding && message.id === messages[messages.length - 1].id}
-              onContentChange={scrollToBottom}
+    <div className="w-full max-w-3xl h-[calc(100vh-4rem)] flex flex-col">
+       <Card className="w-full h-full shadow-2xl flex flex-col">
+        <ScrollArea className="flex-1" viewportRef={viewportRef}>
+          <div className="p-4 space-y-4">
+            {activeSession.messages.map((message) => (
+              <ChatMessage
+                key={message.id}
+                message={message}
+                isResponding={isResponding && message.id === activeSession.messages[activeSession.messages.length - 1].id}
+                onContentChange={scrollToBottom}
+              />
+            ))}
+          </div>
+        </ScrollArea>
+        <div className="p-4 border-t">
+          <form onSubmit={handleSubmit} className="flex items-center gap-2">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask me anything..."
+              className="flex-1"
+              disabled={isResponding}
             />
-          ))}
+            <Button type="submit" size="icon" disabled={isResponding}>
+              <SendHorizonal className="size-5" />
+            </Button>
+          </form>
         </div>
-      </ScrollArea>
-      <div className="p-4 border-t">
-        <form onSubmit={handleSubmit} className="flex items-center gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask me anything..."
-            className="flex-1"
-            disabled={isResponding}
-          />
-          <Button type="submit" size="icon" disabled={isResponding}>
-            <SendHorizonal className="size-5" />
-          </Button>
-        </form>
-      </div>
-    </Card>
+      </Card>
+    </div>
   );
 }

@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
+import { useChatHistory } from '@/hooks/use-chat-history';
+import { ChatHistoryProvider } from '@/hooks/chat-history-provider';
 
 export const metadata: Metadata = {
   title: 'WaleBquit',
@@ -23,7 +25,9 @@ export default function RootLayout({
       <body className={cn(
         'font-body antialiased min-h-screen',
       )}>
-        {children}
+        <ChatHistoryProvider>
+          {children}
+        </ChatHistoryProvider>
         <Toaster />
       </body>
     </html>

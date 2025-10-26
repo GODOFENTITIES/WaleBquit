@@ -4,3 +4,10 @@ export interface Message {
   content: string;
   createdAt: Date;
 }
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: Date;
+  messages: Message[];
+}
