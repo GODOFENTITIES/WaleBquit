@@ -45,7 +45,10 @@ Please provide a comprehensive, friendly, and well-structured response to the fo
 - When appropriate, use lists or formatting to improve readability.
 
 User's prompt:
-{{{prompt}}}`,
+${prompt}`,
+      output: {
+        schema: ConversationalResponseOutputSchema,
+      }
     });
     return output!;
   }
