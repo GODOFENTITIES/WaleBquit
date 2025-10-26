@@ -15,7 +15,7 @@ export function ChatHistoryProvider({ children }: { children: React.ReactNode })
   );
 }
 
-export function useChatHistory() {
+export function useChatHistory(): ChatHistoryContextType {
   const context = useContext(ChatHistoryContext);
   if (!context) {
     throw new Error('useChatHistory must be used within a ChatHistoryProvider');

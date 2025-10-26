@@ -56,7 +56,7 @@ export function useChatHistory() {
   const createNewSession = (messages: Message[] = []) => {
     const newSession: ChatSession = {
       id: `session_${Date.now()}`,
-      title: messages[0]?.content.substring(0, 30) || 'New Chat',
+      title: 'New Chat',
       createdAt: new Date(),
       messages: messages.length > 0 ? messages : [{
         id: 'init',
@@ -80,16 +80,20 @@ export function useChatHistory() {
       const updatedSessions = prev.map(session => {
         if (session.id === sessionId) {
           const newMessages = [...session.messages, message];
-          // Update title if it's the first user message
-          if (session.messages.length === 1 && message.role === 'user') {
-            return { ...session, messages: newMessages, title: message.content.substring(0, 30) };
-          }
           return { ...session, messages: newMessages };
         }
         return session;
       });
       return updatedSessions;
     });
+  }, []);
+
+  const updateSessionTitle = useCallback((sessionId: string, title: string) => {
+    setSessions(prev => 
+      prev.map(session => 
+        session.id === sessionId ? { ...session, title } : session
+      )
+    );
   }, []);
   
   const updateMessageInSession = useCallback((sessionId: string, messageId: string, updatedContent: string) => {
@@ -145,5 +149,6 @@ export function useChatHistory() {
     updateMessageInSession,
     removeMessageFromSession,
     deleteSession,
+    updateSessionTitle
   };
 }

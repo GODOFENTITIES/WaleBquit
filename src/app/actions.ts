@@ -1,6 +1,7 @@
 'use server';
 
 import { generateConversationalResponse } from '@/ai/flows/conversational-response';
+import { generateChatTitle } from '@/ai/flows/generate-initial-task-list';
 import { summarizeWebpageContent } from '@/ai/flows/summarize-webpage-content';
 import { type Message } from '@/lib/types';
 
@@ -27,5 +28,17 @@ export async function getAiResponse(prompt: string, history: Omit<Message, 'id' 
     console.error(error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
     return { success: false, error: `Sorry, I couldn't process that. Error: ${errorMessage}` };
+  }
+}
+
+
+export async function getTitleForSession(prompt: string) {
+  try {
+    const result = await generateChatTitle({ prompt });
+    return { success: true, data: result.title };
+  } catch (error) {
+    console.error('Failed to generate title:', error);
+    // Fallback to a generic title on error
+    return { success: false, data: 'New Chat' };
   }
 }

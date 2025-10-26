@@ -8,7 +8,7 @@ import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
 import { ChatMessage } from './chat-message';
 import { SendHorizonal } from 'lucide-react';
-import { getAiResponse } from '@/app/actions';
+import { getAiResponse, getTitleForSession } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useChatHistory } from '@/hooks/use-chat-history';
 import { Logo } from '../logo';
@@ -19,7 +19,8 @@ export function ChatLayout() {
     activeSessionId, 
     addMessageToSession, 
     updateMessageInSession,
-    removeMessageFromSession
+    removeMessageFromSession,
+    updateSessionTitle,
   } = useChatHistory();
   
   const [input, setInput] = useState('');
@@ -60,6 +61,16 @@ export function ChatLayout() {
     };
 
     addMessageToSession(activeSessionId, userMessage);
+    
+    // Check if this is the first user message to set the title
+    if (activeSession?.messages.filter(m => m.role === 'user').length === 0) {
+      getTitleForSession(input).then(result => {
+        if(result.success && activeSessionId) {
+          updateSessionTitle(activeSessionId, result.data);
+        }
+      });
+    }
+
     addMessageToSession(activeSessionId, aiThinkingMessage);
     
     const currentInput = input;
