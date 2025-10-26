@@ -2,11 +2,9 @@ import type { Message } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ChatAvatar } from './chat-avatar';
 import { ThinkingIndicator } from './thinking-indicator';
-import { useTypewriter } from '@/hooks/use-typewriter';
 
 export function ChatMessage({ message }: { message: Message }) {
   const isAssistant = message.role === 'assistant';
-  const displayText = useTypewriter(message.content, isAssistant && message.content !== '...');
 
   return (
     <div
@@ -27,7 +25,7 @@ export function ChatMessage({ message }: { message: Message }) {
         {message.content === '...' ? (
           <ThinkingIndicator />
         ) : (
-          <p className="leading-relaxed whitespace-pre-wrap">{displayText}</p>
+          <p className="leading-relaxed whitespace-pre-wrap">{message.content}</p>
         )}
       </div>
       {message.role === 'user' && <ChatAvatar role="user" />}

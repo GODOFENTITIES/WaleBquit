@@ -100,7 +100,7 @@ export function ChatLayout() {
             className="flex-1"
             disabled={isResponding}
           />
-          <Button type="submit" size="icon" variant="gooeyLeft" disabled={isResponding}>
+          <Button type="submit" size="icon" disabled={isResponding}>
             <SendHorizonal className="size-5" />
           </Button>
         </form>
