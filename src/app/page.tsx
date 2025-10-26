@@ -17,7 +17,7 @@ export default function Home() {
         <SidebarInset>
           <main className="relative flex flex-1 flex-col items-center justify-center p-4">
             <div className="absolute top-4 left-4">
-               <SidebarTrigger className="md:hidden" />
+               <SidebarTrigger />
             </div>
             <ChatLayout />
           </main>
