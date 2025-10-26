@@ -87,7 +87,12 @@ export function ChatLayout() {
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         <div className="space-y-4">
           {messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
+            <ChatMessage
+              key={message.id}
+              message={message}
+              isResponding={isResponding && message.id === messages[messages.length - 1].id}
+              onContentChange={scrollToBottom}
+            />
           ))}
         </div>
       </ScrollArea>

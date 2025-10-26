@@ -2,9 +2,27 @@ import type { Message } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ChatAvatar } from './chat-avatar';
 import { ThinkingIndicator } from './thinking-indicator';
+import { useTypewriter } from '@/hooks/use-typewriter';
+import { useEffect } from 'react';
 
-export function ChatMessage({ message }: { message: Message }) {
+interface ChatMessageProps {
+  message: Message;
+  isResponding?: boolean;
+  onContentChange?: () => void;
+}
+
+export function ChatMessage({ message, isResponding, onContentChange }: ChatMessageProps) {
   const isAssistant = message.role === 'assistant';
+  const isThinking = message.content === '...';
+  const useTypewriterEffect = isAssistant && !isThinking && isResponding;
+
+  const displayText = useTypewriter(message.content, useTypewriterEffect);
+
+  useEffect(() => {
+    if (useTypewriterEffect) {
+      onContentChange?.();
+    }
+  }, [displayText, useTypewriterEffect, onContentChange]);
 
   return (
     <div
@@ -22,10 +40,10 @@ export function ChatMessage({ message }: { message: Message }) {
             : 'bg-card border rounded-bl-none'
         )}
       >
-        {message.content === '...' ? (
+        {isThinking ? (
           <ThinkingIndicator />
         ) : (
-          <p className="leading-relaxed whitespace-pre-wrap">{message.content}</p>
+          <p className="leading-relaxed whitespace-pre-wrap">{displayText}</p>
         )}
       </div>
       {message.role === 'user' && <ChatAvatar role="user" />}
