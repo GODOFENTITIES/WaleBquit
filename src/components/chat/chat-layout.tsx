@@ -57,13 +57,14 @@ export function ChatLayout() {
       createdAt: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage, aiThinkingMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages([...newMessages, aiThinkingMessage]);
     
     const currentInput = input;
     setInput('');
     setIsResponding(true);
 
-    const result = await getAiResponse(currentInput);
+    const result = await getAiResponse(currentInput, newMessages);
     
     if (result.success) {
       setMessages(prev =>

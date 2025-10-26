@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview Generates a conversational response to a user prompt.
+ * @fileOverview Generates a conversational response to a user prompt, considering conversation history.
  *
  * - generateConversationalResponse - A function that generates a conversational response.
  * - ConversationalResponseInput - The input type for the generateConversationalResponse function.
@@ -11,8 +11,14 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+const MessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string(),
+});
+
 const ConversationalResponseInputSchema = z.object({
-  prompt: z.string().describe("The user's prompt."),
+  history: z.array(MessageSchema).describe('The conversation history.'),
+  prompt: z.string().describe("The user's latest prompt."),
 });
 export type ConversationalResponseInput = z.infer<typeof ConversationalResponseInputSchema>;
 
@@ -27,11 +33,15 @@ export async function generateConversationalResponse(
   return conversationalResponseFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'conversationalResponsePrompt',
-  input: {schema: ConversationalResponseInputSchema},
-  output: {schema: ConversationalResponseOutputSchema},
-  prompt: `You are WaleBquit, a friendly and highly intelligent AI assistant. Your purpose is to engage in natural, helpful, and well-structured conversations.
+const conversationalResponseFlow = ai.defineFlow(
+  {
+    name: 'conversationalResponseFlow',
+    inputSchema: ConversationalResponseInputSchema,
+    outputSchema: ConversationalResponseOutputSchema,
+  },
+  async ({history, prompt}) => {
+    const {output} = await ai.generate({
+      prompt: `You are WaleBquit, a friendly and highly intelligent AI assistant. Your purpose is to engage in natural, helpful, and well-structured conversations.
 
 Please provide a comprehensive, friendly, and well-structured response to the following user prompt.
 - Your language must be clear, grammatically flawless, and easy to understand.
@@ -42,16 +52,8 @@ Please provide a comprehensive, friendly, and well-structured response to the fo
 
 User's prompt:
 {{{prompt}}}`,
-});
-
-const conversationalResponseFlow = ai.defineFlow(
-  {
-    name: 'conversationalResponseFlow',
-    inputSchema: ConversationalResponseInputSchema,
-    outputSchema: ConversationalResponseOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
+      history: history.map(h => ({role: h.role, content: h.content})),
+    });
     return output!;
   }
 );
