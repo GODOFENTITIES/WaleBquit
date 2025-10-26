@@ -3,22 +3,56 @@ import { cn } from '@/lib/utils';
 import { ChatAvatar } from './chat-avatar';
 import { ThinkingIndicator } from './thinking-indicator';
 import { useTypewriter } from '@/hooks/use-typewriter';
+import React from 'react';
 
 function formatContent(content: string) {
-    if (content.includes('- ')) {
-        return (
-            <ul className="space-y-1">
-                {content.split('\n').map((line, i) => (
-                    <li key={i} className="flex items-start">
-                        <span className="mr-2 mt-1">•</span>
-                        <span>{line.replace(/^- /, '')}</span>
-                    </li>
-                ))}
+  // Process newlines first
+  const lines = content.split('\n');
+
+  return (
+    <div className="space-y-2">
+      {lines.map((line, lineIndex) => {
+        if (line.trim().startsWith('- ')) {
+          return (
+            <ul key={lineIndex} className="space-y-1 pl-4">
+              {lines.filter(l => l.trim().startsWith('- ')).map((item, itemIndex) => (
+                <li key={itemIndex} className="flex items-start">
+                  <span className="mr-2 mt-1">•</span>
+                  <span>{formatInline(item.replace(/^- /, ''))}</span>
+                </li>
+              ))}
             </ul>
+          );
+        }
+        if (lines.some(l => l.trim().startsWith('- '))) {
+          return null;
+        }
+        return (
+          <p key={lineIndex} className="leading-relaxed whitespace-pre-wrap">
+            {formatInline(line)}
+          </p>
         );
-    }
-    return <p className="leading-relaxed whitespace-pre-wrap">{content}</p>;
+      })}
+    </div>
+  );
 }
+
+
+function formatInline(text: string): React.ReactNode {
+  // Regex to find **bold** and *italic* text
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={index}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+}
+
 
 export function ChatMessage({ message }: { message: Message }) {
   const isAssistant = message.role === 'assistant';
