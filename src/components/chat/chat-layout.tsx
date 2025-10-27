@@ -12,6 +12,7 @@ import { getAiResponse, getTitleForSession } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useChatHistory } from '@/hooks/chat-history-provider';
 import { Logo } from '../logo';
+import { AnimatedTitle } from './animated-title';
 
 export function ChatLayout() {
   const { 
@@ -39,9 +40,11 @@ export function ChatLayout() {
   }
 
   useEffect(() => {
-    scrollToBottom();
-  }, [activeSession?.messages]);
-
+    if (isResponding) {
+      scrollToBottom();
+    }
+  }, [activeSession?.messages, isResponding]);
+  
   useEffect(() => {
     if (!isResponding) {
       inputRef.current?.focus();
@@ -106,7 +109,7 @@ export function ChatLayout() {
       <div className="w-full max-w-3xl h-full flex items-center justify-center">
          <div className="flex flex-col items-center text-center">
             <Logo />
-            <h2 className="text-2xl font-bold mt-4">WaleBquit</h2>
+            <AnimatedTitle text="WaleBquit" />
             <p className="text-muted-foreground">Start a conversation to see what I can do.</p>
         </div>
       </div>
