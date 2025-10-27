@@ -44,7 +44,7 @@ export function ChatMessage({ message, isResponding, onContentChange }: ChatMess
         {isThinking ? (
           <ThinkingIndicator />
         ) : (
-          <div className="prose prose-sm prose-neutral dark:prose-invert prose-p:leading-relaxed prose-p:m-0">
+          <div className="prose prose-sm prose-neutral dark:prose-invert prose-p:leading-relaxed prose-p:m-0" style={{ whiteSpace: 'pre-wrap' }}>
             <ReactMarkdown
               components={{
                 p: ({ node, ...props }) => <p {...props} />,
