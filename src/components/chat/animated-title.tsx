@@ -19,7 +19,7 @@ export function AnimatedTitle({ text, className }: AnimatedTitleProps) {
           node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName === 'SPAN'
       );
 
-      anime.timeline({ loop: false })
+      anime.timeline({ loop: 3 })
         .add({
           targets: chars,
           translateY: [
