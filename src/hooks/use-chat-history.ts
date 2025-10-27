@@ -5,6 +5,21 @@ import { useState, useEffect, useCallback } from 'react';
 
 const HISTORY_STORAGE_KEY = 'chat_history';
 
+const createNewSession = (messages: Message[] = []) => {
+  const newSession: ChatSession = {
+    id: `session_${Date.now()}`,
+    title: 'New Chat',
+    createdAt: new Date(),
+    messages: messages.length > 0 ? messages : [{
+      id: 'init',
+      role: 'assistant',
+      content: "Hello! I'm WaleBquit. I can help you generate ideas, summarize web pages, and much more. What's on your mind?",
+      createdAt: new Date(),
+    }],
+  };
+  return newSession;
+};
+
 export function useChatHistory() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -14,30 +29,24 @@ export function useChatHistory() {
       const storedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
       const loadedSessions = storedHistory ? JSON.parse(storedHistory) : [];
       
-      // Ensure all loaded messages have Date objects
-      for (const session of loadedSessions) {
-        for (const message of session.messages) {
-          message.createdAt = new Date(message.createdAt);
-        }
-        session.createdAt = new Date(session.createdAt);
-      }
-
-      setSessions(loadedSessions);
-
       if (loadedSessions.length > 0) {
-        if (!activeSessionId) {
+        for (const session of loadedSessions) {
+          for (const message of session.messages) {
+            message.createdAt = new Date(message.createdAt);
+          }
+          session.createdAt = new Date(session.createdAt);
+        }
+        setSessions(loadedSessions);
+        if (!activeSessionId || !loadedSessions.some(s => s.id === activeSessionId)) {
           setActiveSessionId(loadedSessions[0].id);
         }
       } else {
-        // If no sessions exist, create one.
         const newSession = createNewSession();
         setSessions([newSession]);
         setActiveSessionId(newSession.id);
       }
-
     } catch (error) {
       console.error("Failed to load chat history from localStorage", error);
-      // If loading fails, start with a fresh session
       const newSession = createNewSession();
       setSessions([newSession]);
       setActiveSessionId(newSession.id);
@@ -45,35 +54,12 @@ export function useChatHistory() {
   }, []);
 
   useEffect(() => {
-    // Persist sessions to localStorage whenever they change
     if (sessions.length > 0) {
-      try {
-        const currentSessions = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
-        if (JSON.stringify(currentSessions) !== JSON.stringify(sessions)) {
-          localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(sessions));
-        }
-      } catch (error) {
-        console.error("Failed to save chat history to localStorage", error);
-      }
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(sessions));
     } else {
       localStorage.removeItem(HISTORY_STORAGE_KEY);
     }
   }, [sessions]);
-
-  const createNewSession = (messages: Message[] = []) => {
-    const newSession: ChatSession = {
-      id: `session_${Date.now()}`,
-      title: 'New Chat',
-      createdAt: new Date(),
-      messages: messages.length > 0 ? messages : [{
-        id: 'init',
-        role: 'assistant',
-        content: "Hello! I'm WaleBquit. I can help you generate ideas, summarize web pages, and much more. What's on your mind?",
-        createdAt: new Date(),
-      }],
-    };
-    return newSession;
-  };
   
   const startNewSession = useCallback(() => {
     const newSession = createNewSession();
@@ -91,7 +77,6 @@ export function useChatHistory() {
         }
         return session;
       });
-      // Move the updated session to the top
       const currentSession = updatedSessions.find(s => s.id === sessionId);
       const otherSessions = updatedSessions.filter(s => s.id !== sessionId);
       return currentSession ? [currentSession, ...otherSessions] : updatedSessions;
