@@ -76,18 +76,8 @@ export function HistorySidebar() {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className='p-2'>
-          <SidebarTrigger />
         </SidebarFooter>
       </Sidebar>
-
-      <div
-        className={cn(
-          "fixed top-4 left-4 z-20 transition-opacity duration-300",
-          !isMobile && state === 'expanded' ? 'opacity-0 pointer-events-none' : 'opacity-100'
-        )}
-      >
-        {(isMobile || state === 'collapsed') && <SidebarTrigger />}
-      </div>
     </>
   );
 }
