@@ -1,12 +1,30 @@
+'use client';
+
 import { ChatLayout } from '@/components/chat/chat-layout';
 import { HistorySidebar } from '@/components/chat/history-sidebar';
+import { SplashScreen } from '@/components/splash-screen';
 import {
   SidebarProvider,
   SidebarInset,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 7700);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return <SplashScreen />;
+  }
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen bg-background text-foreground">
