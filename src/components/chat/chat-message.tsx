@@ -50,7 +50,7 @@ export function ChatMessage({ message, isResponding, onContentChange }: ChatMess
                 p: ({ node, ...props }) => <p {...props} />,
               }}
             >
-              {displayText}
+              {displayText.replace(/\\n/g, '\n')}
             </ReactMarkdown>
           </div>
         )}
