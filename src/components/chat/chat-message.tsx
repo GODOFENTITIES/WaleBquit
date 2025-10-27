@@ -35,7 +35,7 @@ export function ChatMessage({ message, isResponding, onContentChange }: ChatMess
       {isAssistant && <ChatAvatar role="assistant" />}
       <div
         className={cn(
-          'max-w-[80%] rounded-2xl p-3 px-4',
+          'max-w-[80%] rounded-2xl p-3 px-4 shadow-sm',
           message.role === 'user'
             ? 'bg-primary text-primary-foreground rounded-br-none'
             : 'bg-card border rounded-bl-none'

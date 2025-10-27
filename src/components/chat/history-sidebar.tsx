@@ -28,20 +28,20 @@ export function HistorySidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 p-2">
           <Logo />
           <div className="flex flex-col">
             <h1 className="text-xl font-bold tracking-tight font-headline">
               WaleBquit
             </h1>
-            <p className="text-xs text-muted-foreground">by GOD_OF_ENTITIES</p>
+            <p className="text-xs text-sidebar-foreground/70">by GOD_OF_ENTITIES</p>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent className="p-2">
         <Button
           variant="outline"
-          className="w-full justify-start"
+          className="w-full justify-start h-10"
           onClick={startNewSession}
         >
           <Plus className="mr-2" />
@@ -53,7 +53,7 @@ export function HistorySidebar() {
               <SidebarMenuButton
                 onClick={() => setActiveSessionId(session.id)}
                 isActive={session.id === activeSessionId}
-                className="truncate"
+                className="truncate h-10"
               >
                 {session.title}
               </SidebarMenuButton>
@@ -70,8 +70,8 @@ export function HistorySidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter>
-        <SidebarTrigger />
+      <SidebarFooter className='p-2'>
+        {/* You can add footer content here if needed */}
       </SidebarFooter>
     </Sidebar>
   );

@@ -5,7 +5,7 @@ export function ChatAvatar({ role }: { role: 'user' | 'assistant' }) {
   if (role === 'user') {
     return (
       <Avatar className="size-8">
-        <AvatarFallback className="bg-primary/20 text-primary">
+        <AvatarFallback className="bg-primary text-primary-foreground">
           <User className="size-4" />
         </AvatarFallback>
       </Avatar>
@@ -13,7 +13,7 @@ export function ChatAvatar({ role }: { role: 'user' | 'assistant' }) {
   }
   return (
     <Avatar className="size-8">
-      <AvatarFallback className="bg-accent/20 text-accent-foreground">
+      <AvatarFallback className="bg-accent text-accent-foreground">
         <Bot className="size-4" />
       </AvatarFallback>
     </Avatar>
