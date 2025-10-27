@@ -15,7 +15,7 @@ interface ChatMessageProps {
 export function ChatMessage({ message, isResponding, onContentChange }: ChatMessageProps) {
   const isAssistant = message.role === 'assistant';
   const isThinking = message.content === '...';
-  const useTypewriterEffect = isAssistant && !isThinking && isResponding;
+  const useTypewriterEffect = isAssistant && !isThinking && !!isResponding;
 
   const displayText = useTypewriter(message.content, useTypewriterEffect);
 
@@ -50,7 +50,7 @@ export function ChatMessage({ message, isResponding, onContentChange }: ChatMess
                 p: ({ node, ...props }) => <p {...props} />,
               }}
             >
-              {displayText.replace(/\\n/g, '\n')}
+              {displayText}
             </ReactMarkdown>
           </div>
         )}

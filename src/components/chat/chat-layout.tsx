@@ -40,7 +40,7 @@ export function ChatLayout() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [activeSession?.messages, isResponding]);
+  }, [activeSession?.messages]);
 
   useEffect(() => {
     if (!isResponding) {
