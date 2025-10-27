@@ -39,7 +39,7 @@ export function ChatLayout() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [activeSession?.messages]);
+  }, [activeSession?.messages, isResponding]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -52,14 +52,6 @@ export function ChatLayout() {
       createdAt: new Date(),
     };
     
-    const thinkingMessageId = (Date.now() + 1).toString();
-    const aiThinkingMessage: Message = {
-      id: thinkingMessageId,
-      role: 'assistant',
-      content: '...',
-      createdAt: new Date(),
-    };
-
     addMessageToSession(activeSessionId, userMessage);
     
     // Check if this is the first user message to set the title
@@ -71,6 +63,13 @@ export function ChatLayout() {
       });
     }
 
+    const thinkingMessageId = (Date.now() + 1).toString();
+    const aiThinkingMessage: Message = {
+      id: thinkingMessageId,
+      role: 'assistant',
+      content: '...',
+      createdAt: new Date(),
+    };
     addMessageToSession(activeSessionId, aiThinkingMessage);
     
     const currentInput = input;
