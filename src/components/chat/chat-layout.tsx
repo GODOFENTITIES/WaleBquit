@@ -27,6 +27,7 @@ export function ChatLayout() {
   const { toast } = useToast();
   const [isResponding, setIsResponding] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     if (viewportRef.current) {
@@ -40,6 +41,12 @@ export function ChatLayout() {
   useEffect(() => {
     scrollToBottom();
   }, [activeSession?.messages, isResponding]);
+
+  useEffect(() => {
+    if (!isResponding) {
+      inputRef.current?.focus();
+    }
+  }, [isResponding]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -121,6 +128,7 @@ export function ChatLayout() {
         <div className="p-4 border-t">
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
             <Input
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask me anything..."
