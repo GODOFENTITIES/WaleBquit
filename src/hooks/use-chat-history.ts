@@ -24,10 +24,12 @@ export function useChatHistory() {
 
       setSessions(loadedSessions);
 
-      if (loadedSessions.length > 0 && !activeSessionId) {
-        setActiveSessionId(loadedSessions[0].id);
-      } else if (loadedSessions.length === 0) {
-        // Create a new session if none exist
+      if (loadedSessions.length > 0) {
+        if (!activeSessionId) {
+          setActiveSessionId(loadedSessions[0].id);
+        }
+      } else {
+        // If no sessions exist, create one.
         const newSession = createNewSession();
         setSessions([newSession]);
         setActiveSessionId(newSession.id);
@@ -46,10 +48,15 @@ export function useChatHistory() {
     // Persist sessions to localStorage whenever they change
     if (sessions.length > 0) {
       try {
-        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(sessions));
+        const currentSessions = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
+        if (JSON.stringify(currentSessions) !== JSON.stringify(sessions)) {
+          localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(sessions));
+        }
       } catch (error) {
         console.error("Failed to save chat history to localStorage", error);
       }
+    } else {
+      localStorage.removeItem(HISTORY_STORAGE_KEY);
     }
   }, [sessions]);
 
@@ -84,7 +91,10 @@ export function useChatHistory() {
         }
         return session;
       });
-      return updatedSessions;
+      // Move the updated session to the top
+      const currentSession = updatedSessions.find(s => s.id === sessionId);
+      const otherSessions = updatedSessions.filter(s => s.id !== sessionId);
+      return currentSession ? [currentSession, ...otherSessions] : updatedSessions;
     });
   }, []);
 
@@ -132,6 +142,11 @@ export function useChatHistory() {
           setActiveSessionId(newSession.id);
           return [newSession];
         }
+      }
+      if (remainingSessions.length === 0) {
+        const newSession = createNewSession();
+        setActiveSessionId(newSession.id);
+        return [newSession];
       }
       return remainingSessions;
     });

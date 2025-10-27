@@ -10,7 +10,7 @@ import { ChatMessage } from './chat-message';
 import { SendHorizonal } from 'lucide-react';
 import { getAiResponse, getTitleForSession } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { useChatHistory } from '@/hooks/use-chat-history';
+import { useChatHistory } from '@/hooks/chat-history-provider';
 import { Logo } from '../logo';
 
 export function ChatLayout() {
@@ -46,7 +46,7 @@ export function ChatLayout() {
     if (!isResponding) {
       inputRef.current?.focus();
     }
-  }, [isResponding]);
+  }, [isResponding, activeSessionId]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -103,15 +103,19 @@ export function ChatLayout() {
   
   if (!activeSession) {
     return (
-      <div className="w-full max-w-3xl h-[75vh] flex items-center justify-center">
-        <p>Select a chat or start a new one.</p>
+      <div className="w-full max-w-3xl h-full flex items-center justify-center">
+         <div className="flex flex-col items-center text-center">
+            <Logo />
+            <h2 className="text-2xl font-bold mt-4">WaleBquit</h2>
+            <p className="text-muted-foreground">Start a conversation to see what I can do.</p>
+        </div>
       </div>
     );
   }
 
 
   return (
-    <div className="w-full max-w-3xl h-[calc(100vh-4rem)] flex flex-col">
+    <div className="w-full max-w-3xl h-full flex flex-col">
        <Card className="w-full h-full shadow-2xl flex flex-col">
         <ScrollArea className="flex-1" viewportRef={viewportRef}>
           <div className="p-4 space-y-4">
