@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Plus, Trash2 } from 'lucide-react';
-import { useChatHistory } from '@/hooks/use-chat-history';
+import { useChatHistory } from '@/hooks/chat-history-provider';
 import { Logo } from '../logo';
 
 export function HistorySidebar() {
@@ -40,8 +40,8 @@ export function HistorySidebar() {
       </SidebarHeader>
       <SidebarContent className="p-2">
         <Button
-          variant="outline"
-          className="w-full justify-start h-10"
+          variant="default"
+          className="w-full justify-start h-10 bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent/80"
           onClick={startNewSession}
         >
           <Plus className="mr-2" />
