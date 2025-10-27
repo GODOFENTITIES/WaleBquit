@@ -35,8 +35,7 @@ export function ChatMessage({ message, isResponding, onContentChange }: ChatMess
       {isAssistant && <ChatAvatar role="assistant" />}
       <div
         className={cn(
-          'max-w-[80%] rounded-2xl p-3 px-4 prose prose-sm prose-neutral dark:prose-invert',
-          'prose-p:leading-relaxed prose-p:m-0',
+          'max-w-[80%] rounded-2xl p-3 px-4',
           message.role === 'user'
             ? 'bg-primary text-primary-foreground rounded-br-none'
             : 'bg-card border rounded-bl-none'
@@ -45,13 +44,15 @@ export function ChatMessage({ message, isResponding, onContentChange }: ChatMess
         {isThinking ? (
           <ThinkingIndicator />
         ) : (
-          <ReactMarkdown
-            components={{
-              p: ({ node, ...props }) => <p className="leading-relaxed" {...props} />,
-            }}
-          >
-            {displayText}
-          </ReactMarkdown>
+          <div className="prose prose-sm prose-neutral dark:prose-invert prose-p:leading-relaxed prose-p:m-0">
+            <ReactMarkdown
+              components={{
+                p: ({ node, ...props }) => <p {...props} />,
+              }}
+            >
+              {displayText}
+            </ReactMarkdown>
+          </div>
         )}
       </div>
       {message.role === 'user' && <ChatAvatar role="user" />}
