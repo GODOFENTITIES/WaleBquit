@@ -96,23 +96,23 @@ export function useChatHistory() {
 
   const addMessageToSession = useCallback((sessionId: string, message: Message) => {
     if (!firestore || !user?.uid) return;
-    
-    // Optimistic UI update
-    setSessions(prev => 
-      prev?.map(s => 
-        s.id === sessionId 
-          ? { ...s, messages: [...s.messages, message] } 
-          : s
-      ) || null
-    );
 
-    const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
-    const currentSession = sessions?.find(s => s.id === sessionId);
-    if (currentSession) {
-      const updatedMessages = [...currentSession.messages, message];
-      updateDocumentNonBlocking(sessionRef, { messages: updatedMessages });
-    }
-  }, [firestore, user?.uid, sessions]);
+    setSessions(prevSessions => {
+      const updatedSessions = prevSessions?.map(s =>
+        s.id === sessionId
+          ? { ...s, messages: [...s.messages, message] }
+          : s
+      ) || null;
+
+      const currentSession = updatedSessions?.find(s => s.id === sessionId);
+      if (currentSession) {
+        const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
+        updateDocumentNonBlocking(sessionRef, { messages: currentSession.messages });
+      }
+
+      return updatedSessions;
+    });
+  }, [firestore, user?.uid]);
 
   const updateSessionTitle = useCallback((sessionId: string, title: string) => {
     if (!firestore || !user?.uid) return;
@@ -133,9 +133,8 @@ export function useChatHistory() {
   const updateMessageInSession = useCallback((sessionId: string, messageId: string, updatedContent: string) => {
       if (!firestore || !user?.uid) return;
       
-      // Optimistic UI update
-      setSessions(prev => 
-        prev?.map(s => {
+      setSessions(prevSessions => {
+        const updatedSessions = prevSessions?.map(s => {
           if (s.id === sessionId) {
             return {
               ...s,
@@ -145,40 +144,39 @@ export function useChatHistory() {
             };
           }
           return s;
-        }) || null
-      );
+        }) || null;
 
-      const currentSession = sessions?.find(s => s.id === sessionId);
-      if (currentSession) {
-        const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
-        const updatedMessages = currentSession.messages.map(msg =>
-          msg.id === messageId ? { ...msg, content: updatedContent } : msg
-        );
-        updateDocumentNonBlocking(sessionRef, { messages: updatedMessages });
-      }
-    }, [firestore, user?.uid, sessions]
+        const currentSession = updatedSessions?.find(s => s.id === sessionId);
+        if (currentSession) {
+          const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
+          updateDocumentNonBlocking(sessionRef, { messages: currentSession.messages });
+        }
+
+        return updatedSessions;
+      });
+    }, [firestore, user?.uid]
   );
 
   const removeMessageFromSession = useCallback((sessionId: string, messageId: string) => {
     if (!firestore || !user?.uid) return;
 
-    // Optimistic UI update
-    setSessions(prev =>
-      prev?.map(s => {
+    setSessions(prevSessions => {
+      const updatedSessions = prevSessions?.map(s => {
         if (s.id === sessionId) {
           return { ...s, messages: s.messages.filter(msg => msg.id !== messageId) };
         }
         return s;
-      }) || null
-    );
+      }) || null;
 
-    const currentSession = sessions?.find(s => s.id === sessionId);
-    if(currentSession) {
-      const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
-      const updatedMessages = currentSession.messages.filter(msg => msg.id !== messageId);
-      updateDocumentNonBlocking(sessionRef, { messages: updatedMessages });
-    }
-  }, [firestore, user?.uid, sessions]);
+      const currentSession = updatedSessions?.find(s => s.id === sessionId);
+      if(currentSession) {
+        const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
+        updateDocumentNonBlocking(sessionRef, { messages: currentSession.messages });
+      }
+
+      return updatedSessions;
+    });
+  }, [firestore, user?.uid]);
 
   const deleteSession = useCallback((sessionId: string) => {
     if (!firestore || !user?.uid) return;
