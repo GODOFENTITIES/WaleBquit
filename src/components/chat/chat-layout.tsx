@@ -1,7 +1,7 @@
 'use client';
 
 import type { Message } from '@/lib/types';
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Input } from '../ui/input';
@@ -51,17 +51,17 @@ export function ChatLayout() {
     }
   }, [isResponding, activeSessionId]);
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = useCallback(async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!input.trim() || isResponding || !activeSessionId) return;
-    
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
       content: input,
       createdAt: new Date(),
     };
-    
+
     addMessageToSession(activeSessionId, userMessage);
     
     // Check if this is the first user message to set the title
@@ -85,9 +85,11 @@ export function ChatLayout() {
     const currentInput = input;
     setInput('');
     setIsResponding(true);
+
+    // Construct the history AFTER adding the new user message.
+    const currentHistory = activeSession?.messages.map(({ id, createdAt, ...rest }) => rest) || [];
     
-    const history = activeSession?.messages.map(({ id, createdAt, ...rest }) => rest) || [];
-    const result = await getAiResponse(currentInput, history);
+    const result = await getAiResponse(currentInput, currentHistory);
     
     if (result.success && activeSessionId) {
       updateMessageInSession(activeSessionId, thinkingMessageId, result.data);
@@ -102,7 +104,7 @@ export function ChatLayout() {
       });
     }
     setIsResponding(false);
-  };
+  }, [input, isResponding, activeSessionId, activeSession, addMessageToSession, updateSessionTitle, updateMessageInSession, removeMessageFromSession, toast]);
   
   if (!activeSession) {
     return (

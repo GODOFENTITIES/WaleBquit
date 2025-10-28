@@ -43,7 +43,6 @@ export function useChatHistory() {
   const [sessions, setSessions] = useState<ChatSession[] | null>(sessionsFromDb);
 
   useEffect(() => {
-    // Only update from DB if there's new data.
     if (sessionsFromDb) {
       setSessions(sessionsFromDb);
     }
@@ -66,58 +65,40 @@ export function useChatHistory() {
     const newSessionData = createNewSessionObject(user.uid);
     const sessionsCollection = collection(firestore, 'users', user.uid, 'sessions');
     
-    // Create a temporary ID for optimistic update
-    const tempId = `temp-${Date.now()}`;
-    const newSession: ChatSession = {
-      id: tempId,
-      ...newSessionData
-    };
-    
-    // Optimistically add the new session with a temporary ID
-    setSessions(prev => [newSession, ...(prev || [])]);
-    setActiveSessionId(tempId);
-    
     try {
       const docRef = await addDocumentNonBlocking(sessionsCollection, newSessionData);
       if (docRef) {
-        // Once we get the real ID from Firestore, update the local state.
-        // The real-time listener from useCollection will eventually overwrite this,
-        // but this makes the UI feel faster.
-        setSessions(prev => prev?.map(s => s.id === tempId ? { ...s, id: docRef.id } : s) || null);
+        // The real-time listener from useCollection will add the new session.
+        // We just need to set it as active.
         setActiveSessionId(docRef.id);
       }
     } catch (error) {
       console.error("Error creating new session:", error);
-      // If there was an error, remove the temporary session
-      setSessions(prev => prev?.filter(s => s.id !== tempId) || null);
     }
   }, [firestore, user?.uid]);
 
 
   const addMessageToSession = useCallback((sessionId: string, message: Message) => {
     if (!firestore || !user?.uid) return;
-
+  
     setSessions(prevSessions => {
-      const updatedSessions = prevSessions?.map(s =>
-        s.id === sessionId
-          ? { ...s, messages: [...s.messages, message] }
-          : s
-      ) || null;
-
-      const currentSession = updatedSessions?.find(s => s.id === sessionId);
-      if (currentSession) {
-        const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
-        updateDocumentNonBlocking(sessionRef, { messages: currentSession.messages });
-      }
-
-      return updatedSessions;
+      const updatedSessions = prevSessions?.map(s => {
+        if (s.id === sessionId) {
+          const updatedMessages = [...s.messages, message];
+          const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
+          updateDocumentNonBlocking(sessionRef, { messages: updatedMessages });
+          return { ...s, messages: updatedMessages };
+        }
+        return s;
+      });
+      return updatedSessions || null;
     });
   }, [firestore, user?.uid]);
+  
 
   const updateSessionTitle = useCallback((sessionId: string, title: string) => {
     if (!firestore || !user?.uid) return;
     
-    // Optimistic UI update
     setSessions(prev => 
       prev?.map(s => 
         s.id === sessionId 
@@ -136,23 +117,16 @@ export function useChatHistory() {
       setSessions(prevSessions => {
         const updatedSessions = prevSessions?.map(s => {
           if (s.id === sessionId) {
-            return {
-              ...s,
-              messages: s.messages.map(msg =>
-                msg.id === messageId ? { ...msg, content: updatedContent } : msg
-              )
-            };
+            const updatedMessages = s.messages.map(msg =>
+              msg.id === messageId ? { ...msg, content: updatedContent } : msg
+            );
+            const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
+            updateDocumentNonBlocking(sessionRef, { messages: updatedMessages });
+            return { ...s, messages: updatedMessages };
           }
           return s;
-        }) || null;
-
-        const currentSession = updatedSessions?.find(s => s.id === sessionId);
-        if (currentSession) {
-          const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
-          updateDocumentNonBlocking(sessionRef, { messages: currentSession.messages });
-        }
-
-        return updatedSessions;
+        });
+        return updatedSessions || null;
       });
     }, [firestore, user?.uid]
   );
@@ -163,16 +137,13 @@ export function useChatHistory() {
     setSessions(prevSessions => {
       const updatedSessions = prevSessions?.map(s => {
         if (s.id === sessionId) {
-          return { ...s, messages: s.messages.filter(msg => msg.id !== messageId) };
+          const updatedMessages = s.messages.filter(msg => msg.id !== messageId);
+          const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
+          updateDocumentNonBlocking(sessionRef, { messages: updatedMessages });
+          return { ...s, messages: updatedMessages };
         }
         return s;
       }) || null;
-
-      const currentSession = updatedSessions?.find(s => s.id === sessionId);
-      if(currentSession) {
-        const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
-        updateDocumentNonBlocking(sessionRef, { messages: currentSession.messages });
-      }
 
       return updatedSessions;
     });
@@ -181,7 +152,6 @@ export function useChatHistory() {
   const deleteSession = useCallback((sessionId: string) => {
     if (!firestore || !user?.uid) return;
 
-    // Optimistic UI update
     const remainingSessions = sessions?.filter(s => s.id !== sessionId) || [];
     setSessions(remainingSessions);
     
@@ -200,7 +170,6 @@ export function useChatHistory() {
   
   const activeSession = sessions?.find(session => session.id === activeSessionId);
   
-  // Auto-create a session if none exist for the user
   useEffect(() => {
     const isLoaded = !isUserLoading && !sessionsLoading;
     if (isLoaded && user && sessionsFromDb?.length === 0) {
