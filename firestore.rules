@@ -1,71 +1,70 @@
 /**
- * @fileoverview Firestore Security Rules for the application.
+ * @file Overview
+ * This ruleset enforces a strict user-ownership model, ensuring that users can only access their own data.
  *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model. Each user can only access their own profile data and chat history.
+ * @dataStructure
+ * - /users/{userId}: Stores user profile information.
+ * - /users/{userId}/sessions/{sessionId}: Stores chat sessions for each user.
  *
- * Data Structure:
- * - User profiles are stored in `/users/{userId}`.
- * - Chat history for each user is stored in the `/users/{userId}/chatHistory/{chatHistoryId}` subcollection.
+ * @keySecurityDecisions
+ * - Users can only read and write their own user profile data.
+ * - Users can only read and write their own chat sessions.
+ * - Listing all users is disallowed for privacy.
+ * - Data validation is relaxed in this prototyping phase to accelerate development.
  *
- * Key Security Decisions:
- * - Users can only create their own profile using their authenticated UID.
- * - Users can only read and write their own profile data and chat history.
- * - Listing all users is disallowed.
- *
- * Denormalization for Authorization:
- * - The `userProfileId` in the `ChatHistory` documents is used to enforce ownership, ensuring each chat message belongs to the correct user. This allows us to avoid querying all chat messages and filtering on the client.
+ * @denormalizationForAuthorization
+ * - Chat sessions contain a `userId` field, which is validated against the parent path to enforce ownership.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Enforces user-ownership for UserProfile documents.
+     * @description Controls access to user profile documents.
      * @path /users/{userId}
-     * @allow (create) User with UID 'user123' can create a profile document at /users/user123.
-     * @allow (get) User with UID 'user123' can read their profile document at /users/user123.
-     * @allow (update) User with UID 'user123' can update their profile document at /users/user123.
-     * @allow (delete) User with UID 'user123' can delete their profile document at /users/user123.
-     * @deny (create) User with UID 'user456' cannot create a profile document at /users/user123.
-     * @deny (get) User with UID 'user456' cannot read profile document from /users/user123.
-     * @deny (update) User with UID 'user456' cannot update profile document from /users/user123.
-     * @deny (delete) User with UID 'user456' cannot delete profile document from /users/user123.
+     * @allow (create) User with ID 'user123' can create their own profile.
+     * @allow (get) User with ID 'user123' can read their own profile.
+     * @deny (create) User with ID 'user456' cannot create a profile for 'user123'.
+     * @deny (update) User with ID 'user456' cannot update the profile for 'user123'.
+     * @deny (delete) User with ID 'user456' cannot delete the profile for 'user123'.
      * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
       allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId) && resource.data.id == userId;
-      allow delete: if isOwner(userId) && resource != null;
+      allow list: if false; // Listing all users is not permitted.
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Enforces user-ownership for ChatHistory documents under a specific user.
-     * @path /users/{userId}/chatHistory/{chatHistoryId}
-     * @allow (create) User with UID 'user123' can create a chat history entry at /users/user123/chatHistory/chat1.
-     * @allow (get) User with UID 'user123' can read their chat history entry at /users/user123/chatHistory/chat1.
-     * @allow (update) User with UID 'user123' can update their chat history entry at /users/user123/chatHistory/chat1.
-     * @allow (delete) User with UID 'user123' can delete their chat history entry at /users/user123/chatHistory/chat1.
-     * @deny (create) User with UID 'user456' cannot create a chat history entry at /users/user123/chatHistory/chat1.
-     * @deny (get) User with UID 'user456' cannot read chat history entry from /users/user123/chatHistory/chat1.
-     * @deny (update) User with UID 'user456' cannot update chat history entry from /users/user123/chatHistory/chat1.
-     * @deny (delete) User with UID 'user456' cannot delete chat history entry from /users/user123/chatHistory/chat1.
-     * @principle Restricts access to a user's own chat history.
+     * @description Controls access to chat session documents within a user's profile.
+     * @path /users/{userId}/sessions/{sessionId}
+     * @allow (create) User 'user123' can create a session under their profile.
+     * @allow (get) User 'user123' can read a session under their profile.
+     * @deny (create) User 'user456' cannot create a session under 'user123''s profile.
+     * @deny (update) User 'user456' cannot update a session under 'user123''s profile.
+     * @deny (delete) User 'user456' cannot delete a session under 'user123''s profile.
+     * @principle Enforces document ownership for all operations, inheriting ownership from the parent user document.
      */
-    match /users/{userId}/chatHistory/{chatHistoryId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
+    match /users/{userId}/sessions/{sessionId} {
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) && resource != null;
-      allow delete: if isOwner(userId) && resource != null;
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && resource.data.userId == userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
     }
   }
 }
