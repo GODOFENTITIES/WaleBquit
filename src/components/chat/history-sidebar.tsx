@@ -11,6 +11,7 @@ import {
   SidebarFooter,
   SidebarMenuAction,
   useSidebar,
+  SidebarMenuSkeleton,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Plus, Trash2, PanelLeft } from 'lucide-react';
@@ -25,6 +26,7 @@ export function HistorySidebar() {
     setActiveSessionId,
     startNewSession,
     deleteSession,
+    isLoading,
   } = useChatHistory();
   
   const { state, isMobile, toggleSidebar } = useSidebar();
@@ -53,26 +55,34 @@ export function HistorySidebar() {
             New Chat
           </Button>
           <SidebarMenu className="mt-4">
-            {sessions.map((session) => (
-              <SidebarMenuItem key={session.id}>
-                <SidebarMenuButton
-                  onClick={() => setActiveSessionId(session.id)}
-                  isActive={session.id === activeSessionId}
-                  className="truncate h-10"
-                >
-                  {session.title}
-                </SidebarMenuButton>
-                <SidebarMenuAction
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteSession(session.id);
-                  }}
-                  aria-label="Delete session"
-                >
-                  <Trash2 />
-                </SidebarMenuAction>
-              </SidebarMenuItem>
-            ))}
+            {isLoading ? (
+              <>
+                <SidebarMenuSkeleton showIcon={false} />
+                <SidebarMenuSkeleton showIcon={false} />
+                <SidebarMenuSkeleton showIcon={false} />
+              </>
+            ) : (
+              sessions.map((session) => (
+                <SidebarMenuItem key={session.id}>
+                  <SidebarMenuButton
+                    onClick={() => setActiveSessionId(session.id)}
+                    isActive={session.id === activeSessionId}
+                    className="truncate h-10"
+                  >
+                    {session.title}
+                  </SidebarMenuButton>
+                  <SidebarMenuAction
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteSession(session.id);
+                    }}
+                    aria-label="Delete session"
+                  >
+                    <Trash2 />
+                  </SidebarMenuAction>
+                </SidebarMenuItem>
+              ))
+            )}
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className='p-2'>

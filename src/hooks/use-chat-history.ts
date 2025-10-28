@@ -2,151 +2,141 @@
 
 import type { ChatSession, Message } from '@/lib/types';
 import { useState, useEffect, useCallback } from 'react';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { collection, doc, orderBy, query } from 'firebase/firestore';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import {
+  addDocumentNonBlocking,
+  deleteDocumentNonBlocking,
+  setDocumentNonBlocking,
+  updateDocumentNonBlocking,
+} from '@/firebase/non-blocking-updates';
 
-const HISTORY_STORAGE_KEY = 'chat_history';
-
-const createNewSession = (): ChatSession => {
-  return {
-    id: `session_${Date.now()}`,
-    title: 'New Chat',
-    createdAt: new Date(),
-    messages: [{
+const createNewSessionObject = (userId: string): Omit<ChatSession, 'id'> => ({
+  title: 'New Chat',
+  createdAt: new Date(),
+  messages: [
+    {
       id: 'init',
       role: 'assistant',
-      content: "Hello! I'm WaleBquit. I can help you generate ideas, summarize web pages, and much more. What's on your mind?",
+      content:
+        "Hello! I'm WaleBquit. I can help you generate ideas, summarize web pages, and much more. What's on your mind?",
       createdAt: new Date(),
-    }],
-  };
-};
+    },
+  ],
+  userId,
+});
+
 
 export function useChatHistory() {
-  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+
+  const sessionsQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(
+      collection(firestore, 'users', user.uid, 'sessions'),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore, user?.uid]);
+
+  const { data: sessions, isLoading: sessionsLoading } = useCollection<ChatSession>(sessionsQuery);
+
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    if (!sessionsLoading && sessions && sessions.length > 0) {
+      if (!activeSessionId || !sessions.some(s => s.id === activeSessionId)) {
+        setActiveSessionId(sessions[0].id);
+      }
+    }
+  }, [sessions, sessionsLoading, activeSessionId]);
+
+  const startNewSession = useCallback(async () => {
+    if (!firestore || !user?.uid) return;
+
+    const newSessionData = createNewSessionObject(user.uid);
+    const sessionsCollection = collection(firestore, 'users', user.uid, 'sessions');
+    
     try {
-      const storedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
-      if (storedHistory) {
-        const loadedSessions = JSON.parse(storedHistory).map((session: any) => ({
-          ...session,
-          createdAt: new Date(session.createdAt),
-          messages: session.messages.map((message: any) => ({
-            ...message,
-            createdAt: new Date(message.createdAt),
-          })),
-        }));
-        
-        if (loadedSessions.length > 0) {
-          setSessions(loadedSessions);
-          setActiveSessionId(loadedSessions[0].id);
-        }
+      const docRef = await addDocumentNonBlocking(sessionsCollection, newSessionData);
+      if (docRef) {
+        setActiveSessionId(docRef.id);
       }
     } catch (error) {
-      console.error("Failed to load chat history from localStorage", error);
-    } finally {
-      setIsLoaded(true);
+      console.error("Error creating new session:", error);
     }
-  }, []);
+  }, [firestore, user?.uid]);
 
-  useEffect(() => {
-    if (isLoaded && sessions.length === 0) {
-      const newSession = createNewSession();
-      setSessions([newSession]);
-      setActiveSessionId(newSession.id);
-    }
-  }, [isLoaded, sessions.length]);
-  
-  useEffect(() => {
-    if (isLoaded && sessions.length > 0) {
-        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(sessions));
-    }
-  }, [sessions, isLoaded]);
-  
-  const startNewSession = useCallback(() => {
-    const newSession = createNewSession();
-    setSessions(prev => [newSession, ...prev]);
-    setActiveSessionId(newSession.id);
-  }, []);
 
   const addMessageToSession = useCallback((sessionId: string, message: Message) => {
-    setSessions(prev => {
-      let sessionExists = false;
-      const updatedSessions = prev.map(session => {
-        if (session.id === sessionId) {
-          sessionExists = true;
-          return { ...session, messages: [...session.messages, message] };
-        }
-        return session;
-      });
-
-      if (!sessionExists) {
-        // This case can happen if the active session was deleted but the UI hasn't updated yet.
-        // It's better to not add the message than to create a zombie session.
-        return prev;
-      }
-      
-      const currentSession = updatedSessions.find(s => s.id === sessionId);
-      const otherSessions = updatedSessions.filter(s => s.id !== sessionId);
-      return currentSession ? [currentSession, ...otherSessions] : updatedSessions;
-    });
-  }, []);
+    if (!firestore || !user?.uid) return;
+    const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
+    
+    const currentSession = sessions?.find(s => s.id === sessionId);
+    if (currentSession) {
+      const updatedMessages = [...currentSession.messages, message];
+      updateDocumentNonBlocking(sessionRef, { messages: updatedMessages });
+    }
+  }, [firestore, user?.uid, sessions]);
 
   const updateSessionTitle = useCallback((sessionId: string, title: string) => {
-    setSessions(prev => 
-      prev.map(session => 
-        session.id === sessionId ? { ...session, title } : session
-      )
-    );
-  }, []);
+    if (!firestore || !user?.uid) return;
+    const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
+    updateDocumentNonBlocking(sessionRef, { title });
+  }, [firestore, user?.uid]);
   
   const updateMessageInSession = useCallback((sessionId: string, messageId: string, updatedContent: string) => {
-    setSessions(prev => {
-      return prev.map(session => {
-        if (session.id === sessionId) {
-          const updatedMessages = session.messages.map(msg =>
-            msg.id === messageId ? { ...msg, content: updatedContent } : msg
-          );
-          return { ...session, messages: updatedMessages };
-        }
-        return session;
-      });
-    });
-  }, []);
+      if (!firestore || !user?.uid) return;
+      const currentSession = sessions?.find(s => s.id === sessionId);
+      if (currentSession) {
+        const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
+        const updatedMessages = currentSession.messages.map(msg =>
+          msg.id === messageId ? { ...msg, content: updatedContent } : msg
+        );
+        updateDocumentNonBlocking(sessionRef, { messages: updatedMessages });
+      }
+    }, [firestore, user?.uid, sessions]
+  );
 
   const removeMessageFromSession = useCallback((sessionId: string, messageId: string) => {
-    setSessions(prev =>
-      prev.map(session =>
-        session.id === sessionId
-          ? { ...session, messages: session.messages.filter(msg => msg.id !== messageId) }
-          : session
-      )
-    );
-  }, []);
+    if (!firestore || !user?.uid) return;
+    const currentSession = sessions?.find(s => s.id === sessionId);
+    if(currentSession) {
+      const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
+      const updatedMessages = currentSession.messages.filter(msg => msg.id !== messageId);
+      updateDocumentNonBlocking(sessionRef, { messages: updatedMessages });
+    }
+  }, [firestore, user?.uid, sessions]);
 
   const deleteSession = useCallback((sessionId: string) => {
-    setSessions(prev => {
-      const remainingSessions = prev.filter(session => session.id !== sessionId);
-      if (activeSessionId === sessionId) {
-        if (remainingSessions.length > 0) {
-          setActiveSessionId(remainingSessions[0].id);
-        } else {
-          setActiveSessionId(null); 
-        }
-      }
-      if (remainingSessions.length === 0) {
-         // The useEffect for isLoaded and sessions.length will create a new one.
-        localStorage.removeItem(HISTORY_STORAGE_KEY);
-        return [];
-      }
-      return remainingSessions;
-    });
-  }, [activeSessionId]);
+    if (!firestore || !user?.uid) return;
+    const sessionRef = doc(firestore, 'users', user.uid, 'sessions', sessionId);
+    deleteDocumentNonBlocking(sessionRef);
 
-  const activeSession = sessions.find(session => session.id === activeSessionId);
+    if (activeSessionId === sessionId) {
+      const remainingSessions = sessions?.filter(s => s.id !== sessionId);
+      if (remainingSessions && remainingSessions.length > 0) {
+        setActiveSessionId(remainingSessions[0].id);
+      } else {
+        setActiveSessionId(null);
+      }
+    }
+  }, [firestore, user?.uid, activeSessionId, sessions]);
+  
+  const activeSession = sessions?.find(session => session.id === activeSessionId);
+  
+  // Auto-create a session if none exist for the user
+  useEffect(() => {
+    const isLoaded = !isUserLoading && !sessionsLoading;
+    if (isLoaded && user && sessions?.length === 0) {
+      startNewSession();
+    }
+  }, [isUserLoading, sessionsLoading, user, sessions, startNewSession]);
+
 
   return {
-    sessions,
+    sessions: sessions || [],
     activeSession,
     activeSessionId,
     setActiveSessionId,
@@ -155,6 +145,7 @@ export function useChatHistory() {
     updateMessageInSession,
     removeMessageFromSession,
     deleteSession,
-    updateSessionTitle
+    updateSessionTitle,
+    isLoading: isUserLoading || sessionsLoading,
   };
 }

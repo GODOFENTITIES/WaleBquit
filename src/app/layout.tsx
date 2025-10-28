@@ -1,13 +1,29 @@
+'use client';
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import { ChatHistoryProvider } from '@/hooks/chat-history-provider';
+import { FirebaseClientProvider } from '@/firebase';
+import { useUser } from '@/firebase/provider';
+import { useEffect } from 'react';
+import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { useAuth } from '@/firebase/provider';
 
-export const metadata: Metadata = {
-  title: 'WaleBquit',
-  description: 'Your everyday AI assistant',
-};
+function AuthWrapper({ children }: { children: React.ReactNode }) {
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [user, isUserLoading, auth]);
+
+  return <>{children}</>;
+}
+
 
 export default function RootLayout({
   children,
@@ -24,9 +40,13 @@ export default function RootLayout({
       <body className={cn(
         'font-body antialiased min-h-screen',
       )}>
-        <ChatHistoryProvider>
-          {children}
-        </ChatHistoryProvider>
+        <FirebaseClientProvider>
+          <AuthWrapper>
+            <ChatHistoryProvider>
+              {children}
+            </ChatHistoryProvider>
+          </AuthWrapper>
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>

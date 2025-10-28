@@ -10,4 +10,5 @@ export interface ChatSession {
   title: string;
   createdAt: Date;
   messages: Message[];
+  userId: string;
 }
