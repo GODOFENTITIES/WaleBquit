@@ -43,7 +43,10 @@ export function useChatHistory() {
   const [sessions, setSessions] = useState<ChatSession[] | null>(sessionsFromDb);
 
   useEffect(() => {
-    setSessions(sessionsFromDb);
+    // Only update from DB if there's new data.
+    if (sessionsFromDb) {
+      setSessions(sessionsFromDb);
+    }
   }, [sessionsFromDb]);
 
 
@@ -63,19 +66,30 @@ export function useChatHistory() {
     const newSessionData = createNewSessionObject(user.uid);
     const sessionsCollection = collection(firestore, 'users', user.uid, 'sessions');
     
+    // Create a temporary ID for optimistic update
+    const tempId = `temp-${Date.now()}`;
+    const newSession: ChatSession = {
+      id: tempId,
+      ...newSessionData
+    };
+    
+    // Optimistically add the new session with a temporary ID
+    setSessions(prev => [newSession, ...(prev || [])]);
+    setActiveSessionId(tempId);
+    
     try {
       const docRef = await addDocumentNonBlocking(sessionsCollection, newSessionData);
       if (docRef) {
-        // Optimistically create the new session locally
-        const newSession: ChatSession = {
-          id: docRef.id,
-          ...newSessionData
-        };
-        setSessions(prev => [newSession, ...(prev || [])]);
+        // Once we get the real ID from Firestore, update the local state.
+        // The real-time listener from useCollection will eventually overwrite this,
+        // but this makes the UI feel faster.
+        setSessions(prev => prev?.map(s => s.id === tempId ? { ...s, id: docRef.id } : s) || null);
         setActiveSessionId(docRef.id);
       }
     } catch (error) {
       console.error("Error creating new session:", error);
+      // If there was an error, remove the temporary session
+      setSessions(prev => prev?.filter(s => s.id !== tempId) || null);
     }
   }, [firestore, user?.uid]);
 
