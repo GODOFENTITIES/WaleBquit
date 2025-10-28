@@ -3,7 +3,6 @@ import { cn } from '@/lib/utils';
 import { ChatAvatar } from './chat-avatar';
 import { ThinkingIndicator } from './thinking-indicator';
 import { useTypewriter } from '@/hooks/use-typewriter';
-import { useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 interface ChatMessageProps {
@@ -17,18 +16,17 @@ export function ChatMessage({ message, isResponding, onContentChange }: ChatMess
   const isThinking = message.content === '...';
   const useTypewriterEffect = isAssistant && !isThinking && !!isResponding;
 
-  const displayText = useTypewriter(message.content, useTypewriterEffect);
-
-  useEffect(() => {
-    if (useTypewriterEffect) {
-      onContentChange?.();
-    }
-  }, [displayText, useTypewriterEffect, onContentChange]);
+  const displayText = useTypewriter(
+    message.content,
+    useTypewriterEffect,
+    20,
+    onContentChange
+  );
 
   return (
     <div
       className={cn(
-        'flex items-start gap-3 animate-in fade-in',
+        'flex items-start gap-3',
         message.role === 'user' ? 'justify-end' : 'justify-start'
       )}
     >
