@@ -85,7 +85,7 @@ export function ChatLayout() {
     const currentInput = input;
     setInput('');
     setIsResponding(true);
-
+    
     const history = activeSession?.messages.map(({ id, createdAt, ...rest }) => rest) || [];
     const result = await getAiResponse(currentInput, history);
     

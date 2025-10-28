@@ -17,11 +17,14 @@ function isValidUrl(text: string) {
 
 export async function getAiResponse(prompt: string, history: Omit<Message, 'id' | 'createdAt'>[]) {
   try {
+    const fullHistory = [...history, { role: 'user', content: prompt }];
+    const historyWithoutLastUserMessage = fullHistory.slice(0, -1);
+
     if (isValidUrl(prompt)) {
       const result = await summarizeWebpageContent({ url: prompt });
       return { success: true, data: result.summary };
     } else {
-      const result = await generateConversationalResponse({ prompt, history });
+      const result = await generateConversationalResponse({ prompt, history: historyWithoutLastUserMessage });
       return { success: true, data: result.response };
     }
   } catch (error) {
